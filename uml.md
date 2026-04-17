@@ -1,55 +1,65 @@
 # PawPal+ UML Class Diagram
 
-```
-┌───────────────────────────┐
-│           Owner           │
-├───────────────────────────┤
-│ - name: str               │
-│ - available_minutes: int  │
-│ - pet: Pet                │
-│ - tasks: list             │
-├───────────────────────────┤
-│ + add_task(task: Task)    │
-└───────────────────────────┘
-           │ has 1
-           ▼
-┌───────────────────────────┐
-│            Pet            │
-├───────────────────────────┤
-│ - name: str               │
-│ - species: str            │
-│ - age: int                │
-└───────────────────────────┘
+```mermaid
+classDiagram
+    class Owner {
+        +name: str
+        +available_minutes: int
+        +pets: list[Pet]
+        +add_pet(pet)
+        +get_pet(pet_name)
+        +get_all_tasks()
+    }
 
-┌───────────────────────────┐
-│           Task            │
-├───────────────────────────┤
-│ - title: str              │
-│ - duration_minutes: int   │
-│ - priority: str           │
-└───────────────────────────┘
+    class Pet {
+        +name: str
+        +species: str
+        +age: int
+        +tasks: list[Task]
+        +add_task(task)
+        +task_count()
+        +incomplete_tasks()
+    }
 
-┌───────────────────────────┐
-│         Scheduler         │
-├───────────────────────────┤
-│ - owner: Owner            │
-│ - pet: Pet                │
-│ - tasks: list[Task]       │
-│ - plan: list[Task]        │
-│ - skipped: list[Task]     │
-├───────────────────────────┤
-│ + generate_plan()         │
-│ + explain_plan()          │
-└───────────────────────────┘
+    class Task {
+        +description: str
+        +time: str
+        +duration_minutes: int
+        +frequency: str
+        +completed: bool
+        +due_date: date
+        +priority: str
+        +pet_name: str
+        +mark_complete()
+        +next_occurrence()
+    }
+
+    class Scheduler {
+        +owner: Owner
+        +plan: list[Task]
+        +skipped: list[Task]
+        +conflicts: list[str]
+        +sort_by_time(tasks)
+        +filter_tasks(pet_name, completed, tasks)
+        +detect_conflicts(tasks)
+        +generate_plan(target_date)
+        +mark_task_complete(pet_name, description, time, due_date)
+        +explain_plan(target_date)
+    }
+
+    Owner "1" --> "many" Pet : manages
+    Pet "1" --> "many" Task : stores
+    Scheduler --> Owner : uses
+    Scheduler --> Task : sorts and filters
 ```
 
 ## Relationships
-- Owner **has** one Pet
-- Scheduler **uses** Owner, Pet, and a list of Tasks
-- Scheduler.**generate_plan()** sorts tasks by priority (high → medium → low) and fits them into available time greedily
-- Scheduler.**explain_plan()** returns a human-readable summary including scheduled and skipped tasks
 
-## Changes from initial design
-- `Scheduler` gained two result attributes: `plan` and `skipped` (to store results after generating)
-- `Pet` gained `age` attribute (needed by the UI)
-- `Owner` gained `pet` attribute to hold a reference to the pet
+- One `Owner` can manage many pets.
+- Each `Pet` stores its own list of tasks.
+- `Scheduler` works across all pets by reading tasks from the owner.
+- `Task` supports recurrence through `next_occurrence()`.
+
+## Final Diagram Asset
+
+The exported diagram image for the project is saved as `uml_final.png`.

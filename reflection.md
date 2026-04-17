@@ -2,97 +2,91 @@
 
 ## 1. System Design
 
+### Core user actions
+
+The three main actions in my system are:
+
+- add a pet for one owner
+- add care tasks to a specific pet
+- generate and review today's schedule
+
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+I started with 4 classes for the PawPal+ system.
 
-I designed 4 classes for the PawPal+ system:
+- **Owner** stores the owner's name, available time, and the pets they manage.
+- **Pet** stores the pet's basic details and the tasks for that pet.
+- **Task** stores one care item with a time, duration, frequency, and completion status.
+- **Scheduler** reads tasks from the owner, sorts them, filters them, checks for conflicts, and builds the daily plan.
 
-- **Owner** — stores the owner's name and how many minutes they have available in the day. Responsible for holding the pet reference and a list of tasks.
-- **Pet** — stores the pet's name, species, and age. Represents the animal being cared for.
-- **Task** — stores a care task's title, duration in minutes, and priority level (low, medium, or high).
-- **Scheduler** — takes an Owner, a Pet, and a list of Tasks. Responsible for generating a daily plan that fits within the owner's available time and explaining why each task was chosen.
+I chose these classes because they each had one clear job. This made the system easier to understand before I wrote the real logic.
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+Yes, the design changed during implementation.
 
-Yes, the design changed in a few small ways. The `Scheduler` class gained two new attributes — `plan` and `skipped` — to store the results of `generate_plan()` so they could be accessed separately by `explain_plan()` and the UI. The `Pet` class gained an `age` attribute and `Owner` gained a `pet` attribute, both needed once the Streamlit UI was connected and required richer data to display.
-
----
+At first, the project only worked with one pet and very simple tasks. Later I changed `Owner` so it could manage multiple pets. I also changed `Task` so it could store a task time, a frequency like daily or weekly, and a completion status. I changed the `Scheduler` too, because it needed methods for sorting, filtering, conflict detection, and recurrence. I made these changes because the assignment needed a smarter system than the first draft.
 
 ## 2. Scheduling Logic and Tradeoffs
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+My scheduler looks at the task date, task time, completion status, and the owner's available minutes for the day. It first sorts the tasks by time. Then it adds tasks into the plan until there is no more time left.
 
-The scheduler considers two constraints: the owner's available time (in minutes) and each task's priority level (high, medium, or low). Tasks are sorted by priority first, then fit into the available time one by one. Time was chosen as the hard constraint because you cannot schedule more than what the day allows, while priority determines which tasks get included first.
+I treated available time as the hard limit because a schedule should not go past the time the owner actually has. I also kept completion status important so finished tasks do not keep showing up in the active plan.
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+One tradeoff in my scheduler is that conflict detection only checks exact time matches. It does not calculate overlapping durations like a task from 8:00 to 8:30 and another from 8:15 to 8:45.
 
-The scheduler uses a greedy approach — it picks tasks in priority order and adds them as long as they fit. This means a large high-priority task could use up most of the time, leaving no room for several smaller lower-priority tasks. This tradeoff is reasonable because in pet care, critical tasks (like giving medication) should always come before optional ones (like enrichment activities), even if it means fewer tasks overall.
-
----
+I think this tradeoff is reasonable for this version because it keeps the logic simple and easy to explain. It still catches a common scheduling problem without making the code too complex for this project.
 
 ## 3. AI Collaboration
 
-**a. How you used AI**
+**a. How I used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I used AI for design brainstorming, class planning, test ideas, and cleanup. The most helpful prompts were short and direct, like asking what methods the scheduler should have, how to sort times in `HH:MM` format, and what edge cases should be tested.
 
-I used AI to help me think about the design before writing any code. I asked it to suggest what classes I would need and what each class should do. I also used it to help me write the scheduling logic and the tests. The most helpful questions were simple ones like "what classes do I need?" and "how should the scheduler decide which tasks to include?"
+Copilot was most useful when I was moving from one phase to the next. It helped me turn the UML idea into code structure, and later helped me think about what tests mattered most.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+I did not accept every AI idea exactly as it was given. One example was the early idea to keep the scheduler very simple and only work with one pet. I changed that idea because the assignment expected the owner to manage multiple pets and for the scheduler to work across all of them.
 
-When the AI suggested the class design, I looked at each class and asked myself if it made sense for the pet care problem. For example, I checked that the Scheduler had everything it needed — the owner, the pet, and the tasks — before it could make a plan. I also ran the tests to make sure the code actually worked the way the AI said it would.
+I checked the suggestions by reading the code carefully, running the CLI demo, and running `python -m pytest`. If the suggestion made the code harder to understand or did not match the project instructions, I changed it.
 
----
+**c. Organization with separate chat sessions**
+
+Using separate chat sessions helped me stay organized because each phase had a different goal. One chat could stay focused on system design, another on algorithms, and another on testing. This made it easier to compare ideas without mixing everything together.
+
+**d. Lead architect takeaway**
+
+My biggest lesson was that I still had to be the lead architect even when AI was helping. AI could suggest code fast, but I still had to decide what belonged in the system, what was too much, and what needed to be tested. The final responsibility was still mine.
 
 ## 4. Testing and Verification
 
-**a. What you tested**
+**a. What I tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+I tested task completion, task addition, sorting by time, filtering by pet, recurring daily task creation, conflict detection, and schedule generation when time runs out.
 
-I tested 7 behaviors: that high-priority tasks are scheduled first, that the total scheduled time never exceeds available time, that tasks too long to fit are skipped, that an empty task list returns an empty plan, and that the explanation correctly lists task titles and skipped tasks. These tests are important because they verify the core scheduling rules — if any of them break, the app would produce incorrect or misleading plans for the user.
+These tests were important because they cover the main behaviors the app depends on. If one of these breaks, the schedule shown to the user could be confusing or wrong.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+My confidence level is 4 out of 5. The most important behaviors now have automated tests, and the results pass.
 
-I am confident the scheduler handles the core cases correctly since all 7 tests pass. Edge cases I would test next include: two tasks with the same priority and duration, a task with 0 minutes duration, available time set to 0, and a very large number of tasks to check performance.
-
----
+If I had more time, I would test more edge cases. I would test overlapping durations, editing tasks after they are created, and more date combinations for weekly recurrence.
 
 ## 5. Reflection
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+I am most satisfied with the way the backend classes work together now. The owner can manage multiple pets, each pet can keep its own tasks, and the scheduler can work across all of them in one place.
 
-I am most satisfied with how the scheduling logic works. It sorts the tasks by priority and only adds a task if there is enough time left. This makes the app feel useful and realistic, because it works the same way a real person would plan their day.
+**b. What I would improve**
 
-**b. What you would improve**
-
-- If you had another iteration, what would you improve or redesign?
-
-If I had more time, I would let the user set a start time for the day and show each task with a specific time slot, like "8:00 AM - Walk (20 min)". Right now the plan just lists tasks in order without showing clock times.
+If I had another iteration, I would improve the UI more. I would let the user edit or delete tasks, and I would show better calendar-style output instead of only tables and text.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
-
-I learned that it is important to plan the design before writing code. When I knew what classes I needed and what each one did, writing the code was much easier. I also learned that AI is helpful for getting started, but I still needed to read the code and run the tests to make sure everything worked correctly.
+I learned that planning the system first made the coding part much easier. I also learned that AI works best when I give it a clear goal and then verify the result myself.
