@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 from pathlib import Path
 
+import pytest
+
 from pawpal_system import Owner, PawPalAssistant, Pet, Scheduler, Task, infer_task_type
 
 
@@ -234,3 +236,13 @@ def test_specialized_summary_includes_health_caution_for_medication_tasks():
     specialized = assistant.specialized_summary(date.today())
 
     assert "contact a veterinarian" in specialized.lower()
+
+
+def test_task_validation_rejects_invalid_priority():
+    with pytest.raises(ValueError):
+        Task("Bad priority", "08:00", 10, due_date=date.today(), priority="urgent")
+
+
+def test_task_validation_rejects_non_positive_duration():
+    with pytest.raises(ValueError):
+        Task("Zero duration", "08:00", 0, due_date=date.today(), priority="low")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -11,6 +12,7 @@ from pathlib import Path
 
 PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 PRIORITY_WEIGHT = {"high": 3, "medium": 2, "low": 1}
+ALLOWED_FREQUENCIES = {"once", "daily", "weekly"}
 DEFAULT_KNOWLEDGE_BASE_PATH = Path(__file__).with_name("knowledge_base.json")
 TASK_TYPE_KEYWORDS = {
     "medication": ["med", "medication", "medicine", "pill", "liquid", "dose"],
@@ -21,6 +23,7 @@ TASK_TYPE_KEYWORDS = {
     "vet": ["vet", "veterinarian", "checkup", "appointment", "clinic"],
     "hygiene": ["litter", "clean", "box", "hygiene"],
 }
+logger = logging.getLogger("pawpal")
 
 
 def _time_sort_key(value: str) -> tuple[int, int]:
@@ -168,6 +171,16 @@ class Task:
     priority: str = "medium"
     pet_name: str = ""
 
+    def __post_init__(self) -> None:
+        """Validate task data early so bad inputs fail predictably."""
+        _time_sort_key(self.time)
+        if self.duration_minutes <= 0:
+            raise ValueError("duration_minutes must be greater than zero")
+        if self.frequency not in ALLOWED_FREQUENCIES:
+            raise ValueError(f"frequency must be one of {sorted(ALLOWED_FREQUENCIES)}")
+        if self.priority not in PRIORITY_ORDER:
+            raise ValueError(f"priority must be one of {sorted(PRIORITY_ORDER)}")
+
     def mark_complete(self) -> None:
         """Mark the task as complete."""
         self.completed = True
@@ -302,6 +315,7 @@ class Owner:
     def save_to_json(self, path: str | Path) -> None:
         """Save the owner state to JSON."""
         output_path = Path(path)
+        logger.info("Saving owner state to %s", output_path)
         output_path.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
 
     @classmethod
@@ -320,8 +334,10 @@ class Owner:
         """Load owner state from JSON when the file exists."""
         input_path = Path(path)
         if not input_path.exists():
+            logger.warning("Owner state file does not exist: %s", input_path)
             return None
         data = json.loads(input_path.read_text(encoding="utf-8"))
+        logger.info("Loaded owner state from %s", input_path)
         return cls.from_dict(data)
 
 
@@ -403,6 +419,7 @@ class Scheduler:
     def generate_plan(self, target_date: date | None = None) -> list[Task]:
         """Build a daily schedule that fits inside the available time."""
         target = date.today() if target_date is None else target_date
+        logger.info("Generating plan for %s", target.isoformat())
         candidates = [
             task
             for task in self.owner.get_all_tasks()
@@ -410,6 +427,8 @@ class Scheduler:
         ]
         sorted_tasks = self.sort_by_priority_then_time(candidates)
         self.conflicts = self.detect_conflicts(sorted_tasks)
+        if self.conflicts:
+            logger.warning("Detected %s conflicts for %s", len(self.conflicts), target.isoformat())
         self.plan = []
         self.skipped = []
         self.planning_trace = []
@@ -425,6 +444,7 @@ class Scheduler:
             task_label = f"{task.pet_name} | {task.time} | {task.description}"
             if task.duration_minutes <= time_remaining:
                 self.plan.append(task)
+                logger.info("Scheduled task: %s at %s", task.description, task.time)
                 self.planning_trace.append(
                     PlanningStep(
                         step_number=step_number,
@@ -441,6 +461,7 @@ class Scheduler:
                 time_remaining -= task.duration_minutes
             else:
                 self.skipped.append(task)
+                logger.info("Skipped task: %s at %s", task.description, task.time)
                 suggested_slot = self.find_next_available_slot(
                     task.duration_minutes,
                     target_date=target,
