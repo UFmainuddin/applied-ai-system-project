@@ -3,7 +3,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from pawpal_system import Owner, Pet, Scheduler, Task, infer_task_type
+from pawpal_system import Owner, PawPalAssistant, Pet, Scheduler, Task, infer_task_type
 
 
 DATA_FILE = Path("data.json")
@@ -46,6 +46,7 @@ if "owner" not in st.session_state:
 
 owner: Owner = st.session_state.owner
 scheduler = Scheduler(owner)
+assistant = PawPalAssistant(scheduler)
 
 
 def time_to_string(value: time) -> str:
@@ -320,6 +321,9 @@ if st.button("Generate schedule"):
 
     st.markdown("### Explanation")
     st.text(scheduler.explain_plan(schedule_date))
+
+    st.markdown("### Specialized PawPal Brief")
+    st.text(assistant.specialized_summary(schedule_date))
 
 st.divider()
 

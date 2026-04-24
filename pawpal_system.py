@@ -631,3 +631,78 @@ class Scheduler:
                     )
 
         return "\n".join(lines)
+
+
+class PawPalAssistant:
+    """Generate specialized pet-care briefings from scheduler state."""
+
+    def __init__(self, scheduler: Scheduler):
+        self.scheduler = scheduler
+
+    def baseline_summary(self, target_date: date | None = None) -> str:
+        """Return a generic baseline summary without specialized framing."""
+        target = date.today() if target_date is None else target_date
+        scheduled_count = len(self.scheduler.plan)
+        skipped_count = len(self.scheduler.skipped)
+        return (
+            f"Schedule summary for {target.isoformat()}: "
+            f"{scheduled_count} tasks scheduled, {skipped_count} tasks skipped, "
+            f"{len(self.scheduler.conflicts)} conflicts detected."
+        )
+
+    def specialized_summary(self, target_date: date | None = None) -> str:
+        """Return a constrained, domain-specific care briefing."""
+        target = date.today() if target_date is None else target_date
+        lines = [
+            "PawPal Care Brief",
+            f"Date: {target.isoformat()}",
+            f"Owner: {self.scheduler.owner.name}",
+            "",
+            "Care Priorities:",
+        ]
+
+        if self.scheduler.plan:
+            for task in self.scheduler.plan:
+                guidance = self.scheduler.task_guidance(task, limit=1)
+                note = ""
+                if guidance:
+                    note = f" Guidance: {guidance[0].guidance}"
+                lines.append(
+                    f"- {task.pet_name} at {task.time}: {task.description} "
+                    f"({task.priority} priority).{note}"
+                )
+        else:
+            lines.append("- No scheduled care tasks were selected for this date.")
+
+        lines.append("")
+        lines.append("Watch Items:")
+        if self.scheduler.skipped:
+            for task in self.scheduler.skipped:
+                suggested_slot = self.scheduler.find_next_available_slot(
+                    task.duration_minutes,
+                    target_date=task.due_date,
+                    start_time=task.time,
+                )
+                guidance = self.scheduler.task_guidance(task, limit=1)
+                caution = ""
+                if guidance:
+                    caution = f" Guidance: {guidance[0].guidance}"
+                slot_text = suggested_slot if suggested_slot is not None else "No open slot found"
+                lines.append(
+                    f"- {task.pet_name}: {task.description} was skipped. "
+                    f"Suggested follow-up: {slot_text}.{caution}"
+                )
+        else:
+            lines.append("- No skipped tasks. The current plan fits within the time budget.")
+
+        if self.scheduler.conflicts:
+            for warning in self.scheduler.conflicts:
+                lines.append(f"- Conflict alert: {warning}")
+
+        lines.append("")
+        lines.append("Routine Notes:")
+        if any(infer_task_type(task.description) in {"medication", "vet"} for task in self.scheduler.plan + self.scheduler.skipped):
+            lines.append("- Health-related tasks should stay consistent; contact a veterinarian if medication timing becomes uncertain.")
+        lines.append("- This briefing uses the local pet-care knowledge base and the planning trace to explain why tasks were scheduled or deferred.")
+
+        return "\n".join(lines)

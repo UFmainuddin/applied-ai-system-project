@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from pathlib import Path
 
-from pawpal_system import Owner, Pet, Scheduler, Task, infer_task_type
+from pawpal_system import Owner, PawPalAssistant, Pet, Scheduler, Task, infer_task_type
 
 
 def make_owner() -> Owner:
@@ -202,3 +202,35 @@ def test_explain_plan_includes_agentic_planning_trace_section():
 
     assert "Agentic planning trace:" in explanation
     assert "Step 1:" in explanation
+
+
+def test_specialized_summary_differs_from_baseline():
+    owner = make_owner()
+    luna = owner.get_pet("Luna")
+    assert luna is not None
+    luna.add_task(Task("Medication", "07:30", 20, due_date=date.today(), priority="high"))
+
+    scheduler = Scheduler(owner)
+    scheduler.generate_plan(date.today())
+    assistant = PawPalAssistant(scheduler)
+
+    baseline = assistant.baseline_summary(date.today())
+    specialized = assistant.specialized_summary(date.today())
+
+    assert baseline != specialized
+    assert "PawPal Care Brief" in specialized
+    assert "Care Priorities:" in specialized
+
+
+def test_specialized_summary_includes_health_caution_for_medication_tasks():
+    owner = make_owner()
+    mochi = owner.get_pet("Mochi")
+    assert mochi is not None
+    mochi.add_task(Task("Medication", "08:00", 15, due_date=date.today(), priority="high"))
+
+    scheduler = Scheduler(owner)
+    scheduler.generate_plan(date.today())
+    assistant = PawPalAssistant(scheduler)
+    specialized = assistant.specialized_summary(date.today())
+
+    assert "contact a veterinarian" in specialized.lower()
