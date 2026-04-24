@@ -172,3 +172,33 @@ def test_explain_plan_includes_retrieved_guidance_section():
 
     assert "Retrieved care guidance:" in explanation
     assert "ASPCA General Dog Care" in explanation
+
+
+def test_generate_plan_records_agentic_planning_trace():
+    owner = make_owner()
+    mochi = owner.get_pet("Mochi")
+    assert mochi is not None
+    mochi.add_task(Task("Medication", "07:30", 40, due_date=date.today(), priority="high"))
+    mochi.add_task(Task("Walk", "08:30", 30, due_date=date.today(), priority="low"))
+
+    scheduler = Scheduler(owner)
+    scheduler.generate_plan(date.today())
+
+    assert len(scheduler.planning_trace) == 2
+    assert scheduler.planning_trace[0].decision == "scheduled"
+    assert scheduler.planning_trace[1].decision == "skipped"
+    assert scheduler.planning_trace[1].reason.startswith("Does not fit")
+
+
+def test_explain_plan_includes_agentic_planning_trace_section():
+    owner = make_owner()
+    luna = owner.get_pet("Luna")
+    assert luna is not None
+    luna.add_task(Task("Medication", "07:30", 40, due_date=date.today(), priority="high"))
+
+    scheduler = Scheduler(owner)
+    scheduler.generate_plan(date.today())
+    explanation = scheduler.explain_plan(date.today())
+
+    assert "Agentic planning trace:" in explanation
+    assert "Step 1:" in explanation

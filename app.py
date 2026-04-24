@@ -301,6 +301,11 @@ if st.button("Generate schedule"):
             ]
             st.dataframe(suggestion_rows, width="stretch", hide_index=True)
 
+    trace_rows = scheduler.planning_trace_rows()
+    if trace_rows:
+        st.markdown("### Agentic Planning Trace")
+        st.dataframe(trace_rows, width="stretch", hide_index=True)
+
     guidance_by_task = scheduler.plan_guidance(plan)
     if guidance_by_task:
         st.markdown("### Retrieved Care Guidance")

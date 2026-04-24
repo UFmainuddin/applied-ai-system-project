@@ -126,6 +126,35 @@ class PetCareKnowledgeBase:
         return [entry for _, entry in scored_entries[:limit]]
 
 
+@dataclass(frozen=True)
+class PlanningStep:
+    """Record an observable intermediate decision during schedule planning."""
+
+    step_number: int
+    task_label: str
+    task_type: str
+    priority: str
+    time_remaining_before: int
+    checks: list[str]
+    decision: str
+    reason: str
+    suggested_slot: str | None
+
+    def to_dict(self) -> dict[str, object]:
+        """Convert the planning step into a UI-friendly dictionary."""
+        return {
+            "Step": self.step_number,
+            "Task": self.task_label,
+            "Type": self.task_type.title(),
+            "Priority": self.priority.title(),
+            "Time Remaining Before": self.time_remaining_before,
+            "Checks": " | ".join(self.checks),
+            "Decision": self.decision.title(),
+            "Reason": self.reason,
+            "Suggested Slot": self.suggested_slot or "-",
+        }
+
+
 @dataclass
 class Task:
     """Represent one care task for one pet."""
@@ -304,6 +333,7 @@ class Scheduler:
         self.plan: list[Task] = []
         self.skipped: list[Task] = []
         self.conflicts: list[str] = []
+        self.planning_trace: list[PlanningStep] = []
         self.knowledge_base = PetCareKnowledgeBase()
 
     def sort_by_time(self, tasks: list[Task] | None = None) -> list[Task]:
@@ -382,14 +412,53 @@ class Scheduler:
         self.conflicts = self.detect_conflicts(sorted_tasks)
         self.plan = []
         self.skipped = []
+        self.planning_trace = []
         time_remaining = self.owner.available_minutes
 
-        for task in sorted_tasks:
+        for step_number, task in enumerate(sorted_tasks, start=1):
+            checks = [
+                "Task is pending",
+                f"Task date matches {target.isoformat()}",
+                f"Priority {task.priority} evaluated before lower priority work",
+                f"Duration {task.duration_minutes} min compared against {time_remaining} min remaining",
+            ]
+            task_label = f"{task.pet_name} | {task.time} | {task.description}"
             if task.duration_minutes <= time_remaining:
                 self.plan.append(task)
+                self.planning_trace.append(
+                    PlanningStep(
+                        step_number=step_number,
+                        task_label=task_label,
+                        task_type=infer_task_type(task.description),
+                        priority=task.priority,
+                        time_remaining_before=time_remaining,
+                        checks=checks,
+                        decision="scheduled",
+                        reason="Fits within remaining time after priority-first sorting.",
+                        suggested_slot=task.time,
+                    )
+                )
                 time_remaining -= task.duration_minutes
             else:
                 self.skipped.append(task)
+                suggested_slot = self.find_next_available_slot(
+                    task.duration_minutes,
+                    target_date=target,
+                    start_time=task.time,
+                )
+                self.planning_trace.append(
+                    PlanningStep(
+                        step_number=step_number,
+                        task_label=task_label,
+                        task_type=infer_task_type(task.description),
+                        priority=task.priority,
+                        time_remaining_before=time_remaining,
+                        checks=checks,
+                        decision="skipped",
+                        reason="Does not fit within the remaining time budget for the day.",
+                        suggested_slot=suggested_slot,
+                    )
+                )
 
         return self.plan
 
@@ -458,6 +527,10 @@ class Scheduler:
             label = f"{task.pet_name} | {task.time} | {task.description}"
             guidance[label] = self.task_guidance(task, limit=limit_per_task)
         return guidance
+
+    def planning_trace_rows(self) -> list[dict[str, object]]:
+        """Return planning-trace rows for display."""
+        return [step.to_dict() for step in self.planning_trace]
 
     def mark_task_complete(
         self,
@@ -529,6 +602,20 @@ class Scheduler:
             lines.append("Conflict warnings:")
             for warning in self.conflicts:
                 lines.append(f"- {warning}")
+
+        if self.planning_trace:
+            lines.append("")
+            lines.append("Agentic planning trace:")
+            for step in self.planning_trace:
+                slot_text = (
+                    f" Suggested slot: {step.suggested_slot}."
+                    if step.suggested_slot is not None and step.decision == "skipped"
+                    else ""
+                )
+                lines.append(
+                    f"- Step {step.step_number}: {step.task_label} -> {step.decision}. "
+                    f"{step.reason}{slot_text}"
+                )
 
         guidance_by_task = self.plan_guidance()
         if guidance_by_task:
