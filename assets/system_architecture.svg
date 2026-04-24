@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <style>
+      .title { font: 700 30px Georgia, serif; fill: #1e2a38; }
+      .label { font: 600 20px Georgia, serif; fill: #102033; }
+      .body { font: 16px Georgia, serif; fill: #22384f; }
+      .small { font: 14px Georgia, serif; fill: #35506c; }
+      .box { stroke: #1f3b57; stroke-width: 2; rx: 20; ry: 20; }
+      .line { stroke: #365a7c; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#365a7c" />
+    </marker>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f6f8fb" />
+      <stop offset="100%" stop-color="#dfe8f1" />
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="760" fill="url(#bg)" />
+  <text x="60" y="70" class="title">PawPal+ Applied AI System Architecture</text>
+  <text x="60" y="105" class="body">Input -> retrieval -> planning -> specialized output -> evaluation</text>
+
+  <rect x="60" y="150" width="230" height="130" class="box" fill="#fff7e9" />
+  <text x="85" y="190" class="label">1. User Input</text>
+  <text x="85" y="225" class="body">Owner name</text>
+  <text x="85" y="250" class="body">Pets and tasks</text>
+  <text x="85" y="275" class="body">Available time budget</text>
+
+  <rect x="350" y="150" width="240" height="150" class="box" fill="#e9f5ff" />
+  <text x="375" y="190" class="label">2. Local RAG Layer</text>
+  <text x="375" y="225" class="body">knowledge_base.json</text>
+  <text x="375" y="250" class="body">Species + task type retrieval</text>
+  <text x="375" y="275" class="body">Source-linked guidance snippets</text>
+
+  <rect x="650" y="140" width="260" height="190" class="box" fill="#edf8ee" />
+  <text x="675" y="180" class="label">3. Agentic Scheduler</text>
+  <text x="675" y="215" class="body">Priority-first planning</text>
+  <text x="675" y="240" class="body">Conflict detection</text>
+  <text x="675" y="265" class="body">Skip / reschedule decisions</text>
+  <text x="675" y="290" class="body">Observable planning trace</text>
+
+  <rect x="960" y="150" width="180" height="150" class="box" fill="#f7ecff" />
+  <text x="985" y="190" class="label">4. Outputs</text>
+  <text x="985" y="225" class="body">Schedule table</text>
+  <text x="985" y="250" class="body">Retrieved guidance</text>
+  <text x="985" y="275" class="body">PawPal Care Brief</text>
+
+  <rect x="300" y="420" width="300" height="180" class="box" fill="#fff0f0" />
+  <text x="325" y="460" class="label">5. Reliability Layer</text>
+  <text x="325" y="495" class="body">Pytest suite</text>
+  <text x="325" y="520" class="body">Input validation guardrails</text>
+  <text x="325" y="545" class="body">evaluate_pawpal.py harness</text>
+  <text x="325" y="570" class="body">Pass/fail summary + logs</text>
+
+  <rect x="700" y="420" width="290" height="180" class="box" fill="#eef1ff" />
+  <text x="725" y="460" class="label">Human Oversight</text>
+  <text x="725" y="495" class="body">User reviews schedule and guidance</text>
+  <text x="725" y="520" class="body">Developer reviews tests and outputs</text>
+  <text x="725" y="545" class="body">README + Loom explain behavior</text>
+
+  <path d="M290 215 C315 215, 325 215, 350 215" class="line" />
+  <path d="M590 225 C615 225, 625 225, 650 225" class="line" />
+  <path d="M910 225 C930 225, 940 225, 960 225" class="line" />
+  <path d="M780 330 C780 365, 450 365, 450 420" class="line" />
+  <path d="M1040 300 C1040 365, 845 365, 845 420" class="line" />
+
+  <text x="60" y="690" class="small">Original Module 2 project: multi-pet scheduling and persistence</text>
+  <text x="60" y="715" class="small">Final applied AI additions: local retrieval, planning trace, specialized assistant, evaluation harness</text>
+</svg>

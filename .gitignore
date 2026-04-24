@@ -2,5 +2,6 @@ __pycache__/
 .venv/
 .venv_new/
 .pytest_cache/
+pytest-cache-files-*/
 .DS_Store
 test_owner_data.json
