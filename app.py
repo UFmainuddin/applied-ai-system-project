@@ -3,7 +3,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from pawpal_system import Owner, Pet, Scheduler, Task
+from pawpal_system import Owner, Pet, Scheduler, Task, infer_task_type
 
 
 DATA_FILE = Path("data.json")
@@ -108,6 +108,7 @@ def task_rows(tasks: list[Task]) -> list[dict[str, object]]:
         {
             "Pet": task.pet_name,
             "Task": f"{task_icon(task.description)} {task.description}",
+            "Type": infer_task_type(task.description).title(),
             "Date": task.due_date.isoformat(),
             "Time": task.time,
             "Duration": task.duration_minutes,
@@ -299,6 +300,18 @@ if st.button("Generate schedule"):
                 for label, slot in suggestions.items()
             ]
             st.dataframe(suggestion_rows, width="stretch", hide_index=True)
+
+    guidance_by_task = scheduler.plan_guidance(plan)
+    if guidance_by_task:
+        st.markdown("### Retrieved Care Guidance")
+        for label, entries in guidance_by_task.items():
+            if not entries:
+                continue
+            st.markdown(f"**{label}**")
+            for entry in entries:
+                st.markdown(
+                    f"- {entry.guidance}  \n  Source: [{entry.source_title}]({entry.source_url})"
+                )
 
     st.markdown("### Explanation")
     st.text(scheduler.explain_plan(schedule_date))

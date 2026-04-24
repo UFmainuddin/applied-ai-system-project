@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from pathlib import Path
 
-from pawpal_system import Owner, Pet, Scheduler, Task
+from pawpal_system import Owner, Pet, Scheduler, Task, infer_task_type
 
 
 def make_owner() -> Owner:
@@ -140,3 +140,35 @@ def test_owner_can_save_and_load_json():
     loaded_mochi = loaded.get_pet("Mochi")
     assert loaded_mochi is not None
     assert loaded_mochi.tasks[0].description == "Breakfast"
+
+
+def test_infer_task_type_detects_medication_tasks():
+    assert infer_task_type("Morning medication") == "medication"
+
+
+def test_rag_retrieves_species_and_task_guidance():
+    owner = make_owner()
+    luna = owner.get_pet("Luna")
+    assert luna is not None
+    task = Task("Medication", "08:00", 5, due_date=date.today(), priority="high")
+    luna.add_task(task)
+
+    scheduler = Scheduler(owner)
+    guidance = scheduler.task_guidance(task)
+
+    assert guidance
+    assert any("Medication" in entry.source_title or "medication" in entry.guidance.lower() for entry in guidance)
+
+
+def test_explain_plan_includes_retrieved_guidance_section():
+    owner = make_owner()
+    mochi = owner.get_pet("Mochi")
+    assert mochi is not None
+    mochi.add_task(Task("Morning walk", "08:00", 20, due_date=date.today(), priority="high"))
+
+    scheduler = Scheduler(owner)
+    scheduler.generate_plan(date.today())
+    explanation = scheduler.explain_plan(date.today())
+
+    assert "Retrieved care guidance:" in explanation
+    assert "ASPCA General Dog Care" in explanation

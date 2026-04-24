@@ -1,0 +1,110 @@
+[
+  {
+    "id": "dog_walk_exercise",
+    "species": "dog",
+    "task_type": "walk",
+    "keywords": ["walk", "exercise", "activity", "outdoor"],
+    "guidance": "Dogs benefit from regular exercise for physical health, mental stimulation, and boredom reduction. Exercise needs vary by breed, age, and health status.",
+    "source_title": "ASPCA General Dog Care",
+    "source_url": "https://www.aspca.org/pet-care/dog-care/general-dog-care"
+  },
+  {
+    "id": "dog_feeding_schedule",
+    "species": "dog",
+    "task_type": "feeding",
+    "keywords": ["food", "feeding", "breakfast", "dinner", "meal"],
+    "guidance": "Adult dogs often do well on a consistent feeding schedule with portions adjusted to size and activity. Fresh water should always be available.",
+    "source_title": "ASPCA Dog Nutrition Tips",
+    "source_url": "https://www.aspca.org/pet-care/dog-care/dog-nutrition-tips"
+  },
+  {
+    "id": "dog_grooming",
+    "species": "dog",
+    "task_type": "grooming",
+    "keywords": ["groom", "bath", "brush", "coat"],
+    "guidance": "Regular brushing helps keep a dog's coat clean and can reduce shedding. Bathing frequency depends on the dog, but overbathing is usually unnecessary.",
+    "source_title": "ASPCA General Dog Care",
+    "source_url": "https://www.aspca.org/pet-care/dog-care/general-dog-care"
+  },
+  {
+    "id": "dog_vet_followup",
+    "species": "dog",
+    "task_type": "vet",
+    "keywords": ["vet", "veterinarian", "checkup", "appointment"],
+    "guidance": "Vet-related tasks should stay on schedule because follow-up care and preventive visits can affect ongoing health monitoring.",
+    "source_title": "ASPCA Pet Care",
+    "source_url": "https://www.aspca.org/pet-care"
+  },
+  {
+    "id": "cat_medication_consistency",
+    "species": "cat",
+    "task_type": "medication",
+    "keywords": ["medication", "medicine", "pill", "liquid", "dose", "med"],
+    "guidance": "Medication routines for cats should stay consistent and calm. If a dose is missed or difficult to give, the owner should contact a veterinarian for guidance.",
+    "source_title": "Cornell Feline Health Center Medication & Care",
+    "source_url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/medication-care"
+  },
+  {
+    "id": "cat_feeding_hydration",
+    "species": "cat",
+    "task_type": "feeding",
+    "keywords": ["food", "feeding", "breakfast", "dinner", "meal"],
+    "guidance": "Cats need clean food and water dishes with fresh contents. Consistent meal routines can help owners notice appetite changes sooner.",
+    "source_title": "Cornell Feline Health Center Choosing and Caring for Your New Cat",
+    "source_url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/choosing-and-caring-your-new-cat"
+  },
+  {
+    "id": "cat_play_enrichment",
+    "species": "cat",
+    "task_type": "play",
+    "keywords": ["play", "enrichment", "toy", "window", "interactive"],
+    "guidance": "Cats benefit from regular enrichment and play to support activity and reduce boredom-related behavior issues.",
+    "source_title": "ASPCA Cat Care",
+    "source_url": "https://www.aspca.org/pet-care/cat-care"
+  },
+  {
+    "id": "cat_litter_hygiene",
+    "species": "cat",
+    "task_type": "hygiene",
+    "keywords": ["litter", "clean", "box", "hygiene"],
+    "guidance": "Cats are sensitive to litter box cleanliness, and a clean setup can help maintain normal bathroom habits.",
+    "source_title": "Cornell Feline Health Center Choosing and Caring for Your New Cat",
+    "source_url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/choosing-and-caring-your-new-cat"
+  },
+  {
+    "id": "general_hydration",
+    "species": "general",
+    "task_type": "general",
+    "keywords": ["water", "hydration", "drink"],
+    "guidance": "Fresh water should be available at all times because hydration is essential for everyday health.",
+    "source_title": "ASPCA Dog Nutrition Tips",
+    "source_url": "https://www.aspca.org/pet-care/dog-care/dog-nutrition-tips"
+  },
+  {
+    "id": "general_medication_caution",
+    "species": "general",
+    "task_type": "medication",
+    "keywords": ["medication", "medicine", "pill", "liquid", "dose", "med"],
+    "guidance": "Medication-related tasks should be treated as high importance. Owners should avoid guessing on missed-dose handling and should ask a veterinarian when unsure.",
+    "source_title": "Cornell Feline Health Center Medication & Care",
+    "source_url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/medication-care"
+  },
+  {
+    "id": "general_routine_consistency",
+    "species": "general",
+    "task_type": "general",
+    "keywords": ["routine", "schedule", "daily", "weekly", "recurring"],
+    "guidance": "Consistent daily routines can make it easier to track changes in appetite, activity, and behavior over time.",
+    "source_title": "ASPCA Pet Care",
+    "source_url": "https://www.aspca.org/pet-care"
+  },
+  {
+    "id": "general_vet_warning",
+    "species": "general",
+    "task_type": "vet",
+    "keywords": ["vet", "veterinarian", "checkup", "appointment"],
+    "guidance": "When health-related tasks stack up or are skipped, the plan should clearly flag them so the owner can reassess timing and follow up promptly.",
+    "source_title": "ASPCA Pet Care",
+    "source_url": "https://www.aspca.org/pet-care"
+  }
+]

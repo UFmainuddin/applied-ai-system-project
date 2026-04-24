@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -10,6 +11,16 @@ from pathlib import Path
 
 PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 PRIORITY_WEIGHT = {"high": 3, "medium": 2, "low": 1}
+DEFAULT_KNOWLEDGE_BASE_PATH = Path(__file__).with_name("knowledge_base.json")
+TASK_TYPE_KEYWORDS = {
+    "medication": ["med", "medication", "medicine", "pill", "liquid", "dose"],
+    "feeding": ["food", "feed", "breakfast", "dinner", "meal", "eat"],
+    "walk": ["walk", "outdoor", "potty", "exercise"],
+    "play": ["play", "toy", "window", "enrichment", "fetch"],
+    "grooming": ["groom", "brush", "bath", "coat", "nail"],
+    "vet": ["vet", "veterinarian", "checkup", "appointment", "clinic"],
+    "hygiene": ["litter", "clean", "box", "hygiene"],
+}
 
 
 def _time_sort_key(value: str) -> tuple[int, int]:
@@ -29,6 +40,90 @@ def _time_from_minutes(value: int) -> str:
     hour = value // 60
     minute = value % 60
     return f"{hour:02d}:{minute:02d}"
+
+
+def _normalize_words(value: str) -> set[str]:
+    """Lowercase and split free text into word tokens."""
+    return set(re.findall(r"[a-z]+", value.lower()))
+
+
+def infer_task_type(description: str) -> str:
+    """Infer a task category from its free-text description."""
+    lowered = description.lower()
+    for task_type, keywords in TASK_TYPE_KEYWORDS.items():
+        if any(keyword in lowered for keyword in keywords):
+            return task_type
+    return "general"
+
+
+@dataclass(frozen=True)
+class KnowledgeEntry:
+    """Represent one retrievable knowledge snippet."""
+
+    id: str
+    species: str
+    task_type: str
+    keywords: list[str]
+    guidance: str
+    source_title: str
+    source_url: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> "KnowledgeEntry":
+        """Create an entry from JSON data."""
+        return cls(
+            id=str(data.get("id", "")),
+            species=str(data.get("species", "general")),
+            task_type=str(data.get("task_type", "general")),
+            keywords=[str(value) for value in data.get("keywords", [])],
+            guidance=str(data.get("guidance", "")),
+            source_title=str(data.get("source_title", "")),
+            source_url=str(data.get("source_url", "")),
+        )
+
+
+class PetCareKnowledgeBase:
+    """Retrieve pet-care guidance from a local knowledge base."""
+
+    def __init__(self, path: str | Path = DEFAULT_KNOWLEDGE_BASE_PATH):
+        self.path = Path(path)
+        self.entries = self._load_entries()
+
+    def _load_entries(self) -> list[KnowledgeEntry]:
+        """Load knowledge snippets from disk."""
+        if not self.path.exists():
+            return []
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        return [KnowledgeEntry.from_dict(item) for item in data]
+
+    def retrieve(self, task: "Task", pet_species: str, limit: int = 3) -> list[KnowledgeEntry]:
+        """Return the most relevant snippets for a task."""
+        inferred_type = infer_task_type(task.description)
+        description_words = _normalize_words(task.description)
+        scored_entries: list[tuple[int, KnowledgeEntry]] = []
+
+        for entry in self.entries:
+            score = 0
+            if entry.species == pet_species:
+                score += 4
+            elif entry.species == "general":
+                score += 1
+            else:
+                continue
+
+            if entry.task_type == inferred_type:
+                score += 4
+            elif entry.task_type == "general":
+                score += 1
+
+            keyword_overlap = len(description_words & set(entry.keywords))
+            score += keyword_overlap * 2
+
+            if score > 0:
+                scored_entries.append((score, entry))
+
+        scored_entries.sort(key=lambda item: (-item[0], item[1].id))
+        return [entry for _, entry in scored_entries[:limit]]
 
 
 @dataclass
@@ -209,6 +304,7 @@ class Scheduler:
         self.plan: list[Task] = []
         self.skipped: list[Task] = []
         self.conflicts: list[str] = []
+        self.knowledge_base = PetCareKnowledgeBase()
 
     def sort_by_time(self, tasks: list[Task] | None = None) -> list[Task]:
         """Return tasks sorted by date and time."""
@@ -344,6 +440,25 @@ class Scheduler:
             )
         return suggestions
 
+    def task_guidance(self, task: Task, limit: int = 2) -> list[KnowledgeEntry]:
+        """Retrieve guidance entries for a task."""
+        pet = self.owner.get_pet(task.pet_name)
+        pet_species = "general" if pet is None else pet.species
+        return self.knowledge_base.retrieve(task, pet_species, limit=limit)
+
+    def plan_guidance(
+        self,
+        tasks: list[Task] | None = None,
+        limit_per_task: int = 2,
+    ) -> dict[str, list[KnowledgeEntry]]:
+        """Retrieve guidance grouped by task label."""
+        source = self.plan if tasks is None else tasks
+        guidance: dict[str, list[KnowledgeEntry]] = {}
+        for task in source:
+            label = f"{task.pet_name} | {task.time} | {task.description}"
+            guidance[label] = self.task_guidance(task, limit=limit_per_task)
+        return guidance
+
     def mark_task_complete(
         self,
         pet_name: str,
@@ -400,9 +515,13 @@ class Scheduler:
             lines.append("")
             lines.append("Skipped tasks:")
             for task in self.skipped:
+                guidance = self.task_guidance(task, limit=1)
+                guidance_text = ""
+                if guidance:
+                    guidance_text = f" | guidance: {guidance[0].guidance}"
                 lines.append(
                     f"- {task.time} | {task.pet_name} | {task.description} | "
-                    f"{task.duration_minutes} min | {task.priority}"
+                    f"{task.duration_minutes} min | {task.priority}{guidance_text}"
                 )
 
         if self.conflicts:
@@ -410,5 +529,18 @@ class Scheduler:
             lines.append("Conflict warnings:")
             for warning in self.conflicts:
                 lines.append(f"- {warning}")
+
+        guidance_by_task = self.plan_guidance()
+        if guidance_by_task:
+            lines.append("")
+            lines.append("Retrieved care guidance:")
+            for label, entries in guidance_by_task.items():
+                if not entries:
+                    continue
+                lines.append(f"- {label}")
+                for entry in entries:
+                    lines.append(
+                        f"  * {entry.guidance} ({entry.source_title})"
+                    )
 
         return "\n".join(lines)
