@@ -1,3 +1,7 @@
+
+
+# Demo video link : https://drive.google.com/file/d/16JWZ6CizGqOUBfheEnr9i6tY5UnR4hPP/view?usp=sharing
+
 # PawPal+ Applied AI System
 
 PawPal+ is an AI-integrated pet care planner built from my Module 2 project. The original version focused on multi-pet scheduling, recurring tasks, JSON persistence, and priority-based daily planning. This final version extends that prototype into an applied AI system with local retrieval-augmented guidance, observable agentic planning steps, a specialized pet-care briefing layer, and a repeatable evaluation harness.
